@@ -157,7 +157,8 @@ class GameMap:
                                               cancel
                                               ''',
                                               tcod.light_cyan))
-                    item = Entity(x, y, '#', tcod.light_pink, 'Confusion Scroll',
+                    item = Entity(x, y, '#', tcod.light_pink,
+                                  'Confusion Scroll',
                                   render_order=RenderOrder.ITEM,
                                   item=item_component)
 

@@ -1,41 +1,28 @@
 import tcod
-#2
-from input_handlers import handle_keys, handle_mouse
+
+from death_functions import kill_player, kill_monster
+from entity import get_blocking_entities_at_location
+from fov_functions import initialize_fov, recompute_fov
+from game_messages import Message
+from game_states import GameStates
+from input_handlers import handle_keys, handle_mouse, handle_main_menu
 from loader_functions.initialize_new_game import (get_constants,
                                                   get_game_variables)
-from entity import get_blocking_entities_at_location
+from loader_functions.data_loaders import load_game, save_game
+from menus import main_menu, message_box
 from render_functions import clear_all, render_all
-from fov_functions import initialize_fov, recompute_fov
-from game_states import GameStates
-from death_functions import kill_player, kill_monster
-from game_messages import Message
 
 
-def main():
-    constants = get_constants()
-
-    tcod.console_set_custom_font('arial10x10.png',
-                                 tcod.FONT_TYPE_GREYSCALE |
-                                 tcod.FONT_LAYOUT_TCOD)
-
-    tcod.console_init_root(constants['screen_width'],
-                           constants['screen_height'],
-                           'libcode tutorial revised',
-                           False, renderer=tcod.RENDERER_OPENGL)
-
-    con = tcod.console_new(constants['screen_width'],
-                           constants['screen_height'])
-    panel = tcod.console_new(constants['screen_width'],
-                             constants['panel_height'])
-    (player, entities, game_map, message_log,
-     game_state) = get_game_variables(constants)
-
+def play_game(player, entities, game_map, message_log, game_state, con,
+              panel, constants):
     fov_recompute = True
+
     fov_map = initialize_fov(game_map)
 
     key = tcod.Key()
     mouse = tcod.Mouse()
 
+    game_state = GameStates.PLAYERS_TURN
     previous_game_state = game_state
 
     targeting_item = None
@@ -64,6 +51,7 @@ def main():
         tcod.console_flush()
         tcod.sys_wait_for_event(tcod.EVENT_KEY_PRESS | tcod.EVENT_MOUSE,
                                 key, mouse, flush=True)
+
         clear_all(con, entities)
 
         action = handle_keys(key, game_state)
@@ -86,6 +74,7 @@ def main():
             dx, dy = move
             destination_x = player.x + dx
             destination_y = player.y + dy
+
             if not game_map.is_blocked(destination_x, destination_y):
                 target = get_blocking_entities_at_location(entities,
                                                            destination_x,
@@ -109,6 +98,7 @@ def main():
                     player_turn_results.extend(pickup_results)
 
                     break
+
             else:
                 message_log.add_message(Message(
                     'There is nothing here to pick up.', tcod.yellow))
@@ -125,6 +115,7 @@ def main():
                 and previous_game_state != GameStates.PLAYER_DEAD
                 and inventory_index < len(player.inventory.items)):
             item = player.inventory.items[inventory_index]
+
             if game_state == GameStates.SHOW_INVENTORY:
                 player_turn_results.extend(
                     player.inventory.use(item,
@@ -153,6 +144,8 @@ def main():
             elif game_state == GameStates.TARGETING:
                 player_turn_results.append({'targeting_cancelled': True})
             else:
+                save_game(player, entities, game_map, message_log, game_state)
+
                 return True
 
         if fullscreen:
@@ -184,6 +177,11 @@ def main():
             if item_consumed:
                 game_state = GameStates.ENEMY_TURN
 
+            if item_dropped:
+                entities.append(item_dropped)
+
+                game_state = GameStates.ENEMY_TURN
+
             if targeting:
                 previous_game_state = GameStates.PLAYERS_TURN
                 game_state = GameStates.TARGETING
@@ -192,15 +190,11 @@ def main():
 
                 message_log.add_message(targeting_item.item.targeting_message)
 
-            if item_dropped:
-                entities.append(item_dropped)
-
-                game_state = GameStates.ENEMY_TURN
-
             if targeting_cancelled:
                 game_state = previous_game_state
 
                 message_log.add_message(Message('Target cancelled'))
+
         if game_state == GameStates.ENEMY_TURN:
             for entity in entities:
                 if entity.ai:
@@ -208,7 +202,6 @@ def main():
                                                              fov_map,
                                                              game_map,
                                                              entities)
-
                     for enemy_turn_result in enemy_turn_results:
                         message = enemy_turn_result.get('message')
                         dead_entity = enemy_turn_result.get('dead')
@@ -226,10 +219,91 @@ def main():
 
                             if game_state == GameStates.PLAYER_DEAD:
                                 break
+
                     if game_state == GameStates.PLAYER_DEAD:
                         break
             else:
                 game_state = GameStates.PLAYERS_TURN
+
+
+def main():
+    constants = get_constants()
+
+    tcod.console_set_custom_font('arial10x10.png',
+                                 tcod.FONT_TYPE_GREYSCALE |
+                                 tcod.FONT_LAYOUT_TCOD)
+
+    tcod.console_init_root(constants['screen_width'],
+                           constants['screen_height'],
+                           'libcode tutorial revised',
+                           False, renderer=tcod.RENDERER_OPENGL)
+
+    con = tcod.console_new(constants['screen_width'],
+                           constants['screen_height'])
+    panel = tcod.console_new(constants['screen_width'],
+                             constants['panel_height'])
+
+    player = None
+    entities = []
+    game_map = None
+    message_log = None
+    game_state = None
+
+    show_main_menu = True
+    show_load_error_message = False
+
+    main_menu_background_image = tcod.image_load('menu_background.png')
+
+    key = tcod.Key()
+    mouse = tcod.Mouse()
+
+    while not tcod.console_is_window_closed():
+        if show_main_menu:
+            main_menu(con, main_menu_background_image,
+                      constants['screen_width'],
+                      constants['screen_height'])
+
+            if show_load_error_message:
+                message_box(con, 'No save game to load', 50,
+                            constants['screen_width'],
+                            constants['screen_height'])
+
+            tcod.console_flush()
+            tcod.sys_wait_for_event(tcod.EVENT_KEY_PRESS | tcod.EVENT_MOUSE,
+                                    key, mouse, flush=True)
+
+            action = handle_main_menu(key)
+
+            new_game = action.get('new_game')
+            load_saved_game = action.get('load_game')
+            exit_game = action.get('exit')
+
+            if show_load_error_message and (new_game
+                                            or load_saved_game
+                                            or exit_game):
+                show_load_error_message = False
+            elif new_game:
+                (player, entities, game_map,
+                 message_log, game_state) = get_game_variables(constants)
+                game_state = GameStates.PLAYERS_TURN
+
+                show_main_menu = False
+            elif load_saved_game:
+                try:
+                    (player, entities, game_map,
+                     message_log, game_state) = load_game()
+                    show_main_menu = False
+                except FileNotFoundError:
+                    show_load_error_message = True
+            elif exit_game:
+                break
+
+        else:
+            tcod.console_clear(con)
+            play_game(player, entities, game_map, message_log, game_state,
+                      con, panel, constants)
+
+            show_main_menu = True
 
 
 if __name__ == '__main__':

@@ -43,3 +43,4 @@ class ConfusedMonster:
                                                confused!'''.format(
                                                    self.owner.name),
                                                tcod.red)})
+        return results

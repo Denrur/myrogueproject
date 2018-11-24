@@ -127,9 +127,9 @@ def cast_confuse(*args, **kwargs):
                                                tcod.light_green)})
             break
 
-        else:
-            results.append({'consumed': False,
-                            'message': Message('''There is no targetable
-                                               enemy at that location''',
-                                               tcod.yellow)})
-        return results
+    else:
+        results.append({'consumed': False,
+                        'message': Message('''There is no targetable
+                                           enemy at that location''',
+                                           tcod.yellow)})
+    return results
