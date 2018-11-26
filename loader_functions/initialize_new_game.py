@@ -1,6 +1,7 @@
 import tcod
 from components.fighter import Fighter
 from components.inventory import Inventory
+from components.level import Level
 from entity import Entity
 from game_messages import MessageLog
 from game_states import GameStates
@@ -23,7 +24,7 @@ def get_constants():
     message_height = panel_height - 1
 
     map_width = 80
-    map_heigth = 43
+    map_height = 43
 
     room_max_size = 10
     room_min_size = 6
@@ -33,7 +34,7 @@ def get_constants():
     fov_light_walls = True
     fov_radius = 10
 
-    max_monster_per_room = 3
+    max_monsters_per_room = 3
     max_items_per_room = 2
 
     colors = {
@@ -54,14 +55,14 @@ def get_constants():
         'message_width': message_width,
         'message_height': message_height,
         'map_width': map_width,
-        'map_heigth': map_heigth,
+        'map_height': map_height,
         'room_max_size': room_max_size,
         'room_min_size': room_min_size,
         'max_rooms': max_rooms,
         'fov_algorithm': fov_algorithm,
         'fov_light_walls': fov_light_walls,
         'fov_radius': fov_radius,
-        'max_monster_per_room': max_monster_per_room,
+        'max_monsters_per_room': max_monsters_per_room,
         'max_items_per_room': max_items_per_room,
         'colors': colors
     }
@@ -72,17 +73,19 @@ def get_constants():
 def get_game_variables(constants):
     fighter_component = Fighter(hp=30, defense=2, power=5)
     inventory_component = Inventory(26)
+    level_component = Level()
     player = Entity(0, 0, '@', tcod.white, 'Player',
                     blocks=True, render_order=RenderOrder.ACTOR,
-                    fighter=fighter_component, inventory=inventory_component)
+                    fighter=fighter_component, inventory=inventory_component,
+                    level=level_component)
     entities = [player]
 
-    game_map = GameMap(constants['map_width'], constants['map_heigth'])
+    game_map = GameMap(constants['map_width'], constants['map_height'])
     game_map.make_map(constants['max_rooms'],
                       constants['room_min_size'], constants['room_max_size'],
-                      constants['map_width'], constants['map_heigth'],
+                      constants['map_width'], constants['map_height'],
                       player, entities,
-                      constants['max_monster_per_room'],
+                      constants['max_monsters_per_room'],
                       constants['max_items_per_room'])
 
     message_log = MessageLog(constants['message_x'],
