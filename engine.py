@@ -23,7 +23,7 @@ def play_game(player, entities, game_map, message_log, game_state, con,
     mouse = tcod.Mouse()
 
     game_state = GameStates.PLAYERS_TURN
-    previous_game_state = game_state
+    # previous_game_state = game_state
 
     targeting_item = None
 
@@ -164,7 +164,7 @@ def play_game(player, entities, game_map, message_log, game_state, con,
             print(game_state)
             print(previous_game_state)
             # There is a bug, game_state doesn't chage
-            game_state == previous_game_state
+            game_state = previous_game_state
             # game_state == GameStates.ENEMY_TURN
             print(game_state)
             print(previous_game_state)
