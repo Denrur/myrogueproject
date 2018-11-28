@@ -1,8 +1,11 @@
 import tcod
+import pdb
 from entity import Entity
 from game_messages import Message
 from random import randint
 from components.ai import BasicMonster
+from components.equipment import EquipmentSlots
+from components.equippable import Equippable
 from components.fighter import Fighter
 from components.item import Item
 from components.stairs import Stairs
@@ -20,6 +23,13 @@ class GameMap:
         self.tiles = self.initialize_tiles()
 
         self.dungeon_level = dungeon_level
+
+    def load_customfont(self):
+        a = 160
+
+        for y in range(5, 6):
+            tcod.console_map_ascii_codes_to_font(a, 32, 0, y)
+            a += 32
 
     def make_map(self, max_rooms, room_min_size, room_max_size, map_width,
                  map_height, player, entities):
@@ -104,6 +114,10 @@ class GameMap:
             self.tiles[x][y].block_sight = False
 
     def place_entities(self, room, entities):
+        pdb.set_trace()
+        self.load_customfont()
+        orc_tile = 160
+        troll_tile = 161
         max_monsters_per_room = from_dungeon_level([[2, 1], [3, 4], [5, 6]],
                                                    self.dungeon_level)
         max_items_per_room = from_dungeon_level([[1, 1], [2, 4]],
@@ -117,6 +131,12 @@ class GameMap:
                                               self.dungeon_level)
                            }
         item_chances = {'healing_potion': 35,
+                        'sword':
+                        from_dungeon_level([[5, 4]],
+                                           self.dungeon_level),
+                        'shield':
+                        from_dungeon_level([[15, 8]],
+                                           self.dungeon_level),
                         'lightning_scroll':
                         from_dungeon_level([[25, 4]],
                                            self.dungeon_level),
@@ -142,7 +162,7 @@ class GameMap:
                                                 power=4,
                                                 xp=600)
                     ai_component = BasicMonster()
-                    monster = Entity(x, y, 'o', tcod.desaturated_green,
+                    monster = Entity(x, y, orc_tile, tcod.desaturated_green,
                                      'Orc', blocks=True,
                                      render_order=RenderOrder.ACTOR,
                                      fighter=fighter_component,
@@ -153,7 +173,7 @@ class GameMap:
                                                 power=8,
                                                 xp=600)
                     ai_component = BasicMonster()
-                    monster = Entity(x, y, 'T', tcod.darker_green,
+                    monster = Entity(x, y, troll_tile, tcod.darker_green,
                                      'Troll', blocks=True,
                                      render_order=RenderOrder.ACTOR,
                                      fighter=fighter_component,
@@ -174,6 +194,18 @@ class GameMap:
                                   'Healing Potion',
                                   render_order=RenderOrder.ITEM,
                                   item=item_component)
+                elif item_choice == 'sword':
+                    equippable_component = Equippable(EquipmentSlots.MAIN_HAND,
+                                                      power_bonus=3)
+                    item = Entity(x, y, '/', tcod.sky,
+                                  'Sword',
+                                  equippable=equippable_component)
+                elif item_choice == 'shield':
+                    equippable_component = Equippable(EquipmentSlots.OFF_HAND,
+                                                      defense_bonus=1)
+                    item = Entity(x, y, '[', tcod.darker_orange,
+                                  'Shield',
+                                  equippable=equippable_component)
                 elif item_choice == 'fireball_scroll':
                     item_component = Item(use_function=cast_fireball,
                                           targeting=True,

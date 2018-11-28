@@ -1,6 +1,7 @@
 from enum import Enum
 
 
+# Состояния игры
 class GameStates(Enum):
     PLAYERS_TURN = 1
     ENEMY_TURN = 2
