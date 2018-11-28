@@ -2,6 +2,7 @@ import tcod
 from game_states import GameStates
 
 
+# Функция управления принимает разные значения в зависимости от состояния игры
 def handle_keys(key, game_state):
     if game_state == GameStates.PLAYERS_TURN:
         return handle_player_turn_keys(key)
@@ -21,7 +22,7 @@ def handle_keys(key, game_state):
 
 def handle_player_turn_keys(key):
     key_char = chr(key.c)
-
+    #Передает словарь с тегом и значением
     # Movement keys
     if key.vk == tcod.KEY_UP or key_char == 'w':
         return{'move': (0, -1)}

@@ -1,25 +1,29 @@
 import tcod
 
 
+# Создаем шаблон меню в который передаем параметры
+# консоль, где рендерится меню, заголовок, опции, высоту и длину экрана
 def menu(con, header, options, width, screen_width, screen_height):
+    # Ограничиваем количество опций, отображаемых в меню
     if len(options) > 26:
                 raise ValueError('Cant have a menu with more than 26 options.')
 
-    # calculate total height for the header
-    # (after auto-wrap) and one line per option
+    # Расчитываем высоту заголовка(после автосворачивания) и линий для каждой
+    # опции меню
+
     header_height = tcod.console_get_height_rect(con, 0, 0, width,
                                                  screen_height, header)
     height = len(options) + header_height
 
-    # create an off-screen console that represents the menu's window
+    # Создаем консоль, в которой будет отображаться окно меню
     window = tcod.console_new(width, height)
 
-    # print the header, with autho-wrap
+    # Печатаем заголовой с автопереносом и выравниванием по левой стороне окна
     tcod.console_set_default_foreground(window, tcod.white)
     tcod.console_print_rect_ex(window, 0, 0, width, height,
                                tcod.BKGND_NONE, tcod.LEFT, header)
 
-    # print all the options
+    # Печатаем все опции, присваивая им буквы по алфавиту
     y = header_height
     letter_index = ord('a')
     for option_text in options:
@@ -33,18 +37,28 @@ def menu(con, header, options, width, screen_width, screen_height):
     y = int(screen_height / 2 - height / 2)
     tcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
 
-
-def inventory_menu(con, header, inventory, inventory_width,
+# Меню инвентаря принимает параметры
+# консоль, заголовок, объект игрока, ширина окна инветаря, ширина и длина
+# экрана
+def inventory_menu(con, header, player, inventory_width,
                    screen_width, screen_height):
-    # show a menu with each item of the inventory as an option
-    if len(inventory.items) == 0:
+    # Показывает игроку меню инвентаря с предметами в нем в качестве опций
+    if len(player.inventory.items) == 0:
         options = ['Inventory is empty.']
     else:
-        options = [item.name for item in inventory.items]
+        options = []
+
+        for item in player.inventory.items:
+            if player.equipment.main_hand == item:
+                options.append('{0} (on main hand)'.format(item.name))
+            elif player.equipment.off_hand == item:
+                options.append('{0} (on off hend)'.format(item.name))
+            else:
+                options.append(item.name)
 
     menu(con, header, options, inventory_width, screen_width, screen_height)
 
-
+# Главное меню с фоновой картинкой
 def main_menu(con, background_image, screen_width, screen_height):
     tcod.image_blit_2x(background_image, 0, 0, 0)
 
@@ -58,7 +72,7 @@ def main_menu(con, background_image, screen_width, screen_height):
     menu(con, '', ['Play a new game', 'Continue last game', 'Quit'], 24,
          screen_width, screen_height)
 
-
+# Меню повышения статов при левелапе
 def level_up_menu(con, header, player, menu_width,
                   screen_width, screen_height):
     options = ['Constitution (+20 HP, from {0})'.format(player.fighter.max_hp),
@@ -67,7 +81,7 @@ def level_up_menu(con, header, player, menu_width,
 
     menu(con, header, options, menu_width, screen_width, screen_height)
 
-
+# Меню с параметрами персонажа
 def character_screen(player, character_screen_width, character_screen_height,
                      screen_width, screen_height):
     window = tcod.console_new(character_screen_width, character_screen_height)
@@ -76,7 +90,8 @@ def character_screen(player, character_screen_width, character_screen_height,
 
     tcod.console_print_rect_ex(window, 0, 1, character_screen_width,
                                character_screen_height, tcod.BKGND_NONE,
-                               tcod.LEFT, "Character Information")
+                               tcod.LEFT,
+                               "Character Information")
     tcod.console_print_rect_ex(window, 0, 2, character_screen_width,
                                character_screen_height, tcod.BKGND_NONE,
                                tcod.LEFT,
@@ -109,6 +124,6 @@ def character_screen(player, character_screen_width, character_screen_height,
                       character_screen_width, character_screen_height,
                       0, x, y, 1.0, 0.7)
 
-
+# пустое меню без опций
 def message_box(con, header, width, screen_width, screen_height):
     menu(con, header, [], width, screen_width, screen_height)
