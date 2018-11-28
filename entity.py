@@ -1,6 +1,9 @@
 import math
 import tcod
 
+
+from components.item import Item
+
 from render_functions import RenderOrder
 
 
@@ -9,10 +12,17 @@ class Entity:
     """
     A generic object to represent players, enemies, items, etc.
     """
+    # Инициализируем сущность, координаты, тайл, цвет тайла, имя,
+    # Свойства - блокирует ли премещение (по умолчанию - нет), порядок
+    # рендера(по умолчанию CORPSE, имеет ли компоненты
+    # Для существ - fighter, ai, inventory,
+    # Для лестниц stairs, level,
+    # Для предметов экипировки equipment, equippable
     def __init__(self, x, y, char, color, name, blocks=False,
                  render_order=RenderOrder.CORPSE,
                  fighter=None, ai=None, item=None,
-                 inventory=None, stairs=None, level=None):
+                 inventory=None, stairs=None, level=None,
+                 equipment=None, equippable=None):
         self.x = x
         self.y = y
         self.char = char
@@ -26,7 +36,10 @@ class Entity:
         self.inventory = inventory
         self.stairs = stairs
         self.level = level
+        self.equipment = equipment
+        self.equippable = equippable
 
+        # обозначаем владельца компоненты
         if self.fighter:
             self.fighter.owner = self
 
@@ -45,12 +58,26 @@ class Entity:
         if self.level:
             self.level.owner = self
 
+        if self.equipment:
+            self.equipment.owner = self
+
+        if self.equippable:
+            self.equippable.owner = self
+            # если у суности нет компоненты предмет, добавим ее и укажем
+            # владельца
+            if not self.item:
+                item = Item()
+                self.item = item
+                self.item.owner = self
+    # Функия движения
     def move(self, dx, dy):
         # Move entity by given amount
         self.x += dx
         self.y += dy
-
+    # Функция движения к цели на вход получает координаты цели, карту и список
+    # сущностей
     def move_towards(self, target_x, target_y, game_map, entities):
+        # расчитываем расстояние до цели по теореме пифагора
         dx = target_x - self.x
         dy = target_y - self.y
         distance = math.sqrt(dx**2 + dy**2)
@@ -61,12 +88,13 @@ class Entity:
         '''
         dx = int(round(dx/distance))
         dy = int(round(dy/distance))
-
+        # Если на координатах предполагаемого перемещения нет стены или
+        # непроходимой сущности, то перемещаем сущность на новые координаты
         if not (game_map.is_blocked(self.x + dx, self.y + dy) or
                 get_blocking_entities_at_location(
                     entities, self.x + dx, self.y + dy)):
             self.move(dx, dy)
-
+    # Алгоритм поиска пути A*
     def move_astar(self, target, entities, game_map):
         # Create a FOV map that has th dimentions of the map
         fov = tcod.map_new(game_map.width, game_map.height)
@@ -108,16 +136,17 @@ class Entity:
 
         # delete path to clear memory
         tcod.path_delete(my_path)
-
+    # Расстояние до точки с координатами x, y
     def distance(self, x, y):
         return math.sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
-
+    # Расстояние до объекта
     def distance_to(self, other):
         dx = other.x - self.x
         dy = other.y - self.y
         return math.sqrt(dx**2 + dy**2)
 
-
+# Получаем объект, блокирующий перемещение, координаты которого равны
+# координатам пункта назначения
 def get_blocking_entities_at_location(entities, destination_x, destination_y):
     for entity in entities:
         if (entity.blocks and

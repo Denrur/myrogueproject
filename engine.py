@@ -48,11 +48,11 @@ def play_game(player, entities, game_map, message_log, game_state, con,
 
         fov_recompute = False
 
+        clear_all(con, entities)
+
         tcod.console_flush()
         tcod.sys_wait_for_event(tcod.EVENT_KEY_PRESS | tcod.EVENT_MOUSE,
                                 key, mouse, flush=True)
-
-        clear_all(con, entities)
 
         action = handle_keys(key, game_state)
         mouse_action = handle_mouse(mouse)
@@ -153,12 +153,12 @@ def play_game(player, entities, game_map, message_log, game_state, con,
 
         if level_up:
             if level_up == 'hp':
-                player.fighter.max_hp += 20
+                player.fighter.base_max_hp += 20
                 player.fighter.hp += 20
             elif level_up == 'str':
-                player.fighter.power += 1
+                player.fighter.base_power += 1
             elif level_up == 'def':
-                player.fighter.defense += 1
+                player.fighter.base_defense += 1
             print(player.level.current_level)
             print(player.level.current_xp)
             print(game_state)
@@ -206,6 +206,7 @@ def play_game(player, entities, game_map, message_log, game_state, con,
             item_added = player_turn_result.get('item_added')
             item_consumed = player_turn_result.get('consumed')
             item_dropped = player_turn_result.get('item_dropped')
+            equip = player_turn_result.get('equip')
             targeting = player_turn_result.get('targeting')
             targeting_cancelled = player_turn_result.get('targeting_cancelled')
             xp = player_turn_result.get('xp')
@@ -231,6 +232,24 @@ def play_game(player, entities, game_map, message_log, game_state, con,
             if item_dropped:
                 entities.append(item_dropped)
 
+                game_state = GameStates.ENEMY_TURN
+
+            if equip:
+                equip_results = player.equipment.toggle_equip(equip)
+
+                for equip_result in equip_results:
+                    equipped = equip_result.get('equipped')
+                    dequipped = equip_result.get('dequipped')
+
+                    if equipped:
+                        message_log.add_message(
+                            Message('You equipped the {0}'.format(
+                                equipped.name)))
+
+                    if dequipped:
+                        message_log.add_message(
+                            Message('You dequipped the {0}'.format(
+                                dequipped.name)))
                 game_state = GameStates.ENEMY_TURN
 
             if targeting:
@@ -294,9 +313,9 @@ def play_game(player, entities, game_map, message_log, game_state, con,
 def main():
     constants = get_constants()
 
-    tcod.console_set_custom_font('arial10x10.png',
+    tcod.console_set_custom_font('arial10x10_custom.png',
                                  tcod.FONT_TYPE_GREYSCALE |
-                                 tcod.FONT_LAYOUT_TCOD)
+                                 tcod.FONT_LAYOUT_TCOD, 32, 6)
 
     tcod.console_init_root(constants['screen_width'],
                            constants['screen_height'],

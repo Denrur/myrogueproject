@@ -4,6 +4,7 @@ from game_states import GameStates
 from menus import character_screen, inventory_menu, level_up_menu
 
 
+# Порядок рендера
 class RenderOrder(Enum):
     STAIRS = 1
     CORPSE = 2
@@ -11,6 +12,7 @@ class RenderOrder(Enum):
     ACTOR = 4
 
 
+# Получение имени сущности под курсором мыши
 def get_names_under_mouse(mouse, entities, fov_map):
     (x, y) = (mouse.cx, mouse.cy)
 
@@ -22,8 +24,12 @@ def get_names_under_mouse(mouse, entities, fov_map):
     return names.capitalize()
 
 
+# Рендер панели, координаты верхнего левого угла, полная длина, наименование,
+# значение, максимальное значение, цвет панели, цвет заднего плана
 def render_bar(panel, x, y, total_width, name, value, maximum,
                bar_color, back_color):
+        # Длина панели равно отношению значения к максимальному значению,
+        # умноженному на полную длину панели
         bar_width = int(float(value) / maximum * total_width)
 
         tcod.console_set_default_background(panel, back_color)
@@ -34,11 +40,15 @@ def render_bar(panel, x, y, total_width, name, value, maximum,
         if bar_width > 0:
             tcod.console_rect(panel, x, y, bar_width, 1, False,
                               tcod.BKGND_SCREEN)
+            #
             tcod.console_print_ex(panel, int(x + total_width / 2), y,
                                   tcod.BKGND_NONE, tcod.CENTER,
                                   '{0}: {1}/{2}'.format(name, value, maximum))
 
 
+# Рендер всего, консоль, панель, сущности, игрок, карта, поле зрения,
+# обновление поля зрения, лог сообщений, ширина и длина экрана, ширина панели,
+# высота панели, горизонтальное положение панели
 def render_all(con, panel, entities, player, game_map, fov_map,
                fov_recompute, message_log, screen_width, screen_height,
                bar_width, panel_height, panel_y, mouse, colors, game_state):
@@ -89,7 +99,7 @@ def render_all(con, panel, entities, player, game_map, fov_map,
         else:
             inventory_title = 'Press the key next to an item to drop it'
 
-        inventory_menu(con, inventory_title, player.inventory, 50,
+        inventory_menu(con, inventory_title, player, 50,
                        screen_width, screen_height)
     elif game_state == GameStates.LEVEL_UP:
         level_up_menu(con, 'Level up! Choosw a stat to raise:', player, 40,
