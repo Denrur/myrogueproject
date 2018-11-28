@@ -1,2 +1,5 @@
 *.pyc
+*.db
 /__pycache__
+/components/__pycache__
+/map_object/__pycache__
