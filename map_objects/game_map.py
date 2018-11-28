@@ -24,11 +24,11 @@ class GameMap:
 
         self.dungeon_level = dungeon_level
 
-    def load_customfont():
+    def load_customfont(self):
         a = 160
 
         for y in range(5, 6):
-            tcod.console_map_ascii_code_to_font(a, 32, 0, y)
+            tcod.console_map_ascii_codes_to_font(a, 32, 0, y)
             a += 32
 
     def make_map(self, max_rooms, room_min_size, room_max_size, map_width,

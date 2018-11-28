@@ -315,7 +315,7 @@ def main():
 
     tcod.console_set_custom_font('arial10x10_custom.png',
                                  tcod.FONT_TYPE_GREYSCALE |
-                                 tcod.FONT_LAYOUT_TCOD, 32, 6)
+                                 tcod.FONT_LAYOUT_TCOD)
 
     tcod.console_init_root(constants['screen_width'],
                            constants['screen_height'],
