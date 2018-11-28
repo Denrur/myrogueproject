@@ -114,7 +114,7 @@ class GameMap:
             self.tiles[x][y].block_sight = False
 
     def place_entities(self, room, entities):
-        pdb.set_trace()
+
         self.load_customfont()
         orc_tile = 160
         troll_tile = 161
